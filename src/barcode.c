@@ -108,7 +108,7 @@ int main() {
         }
 
         // delete
-        else if (choice == 2) {3
+        else if (choice == 2) {
 
             int item;
 
@@ -125,7 +125,7 @@ int main() {
     }
 
     // final cart
-    printf("\n===== お会計 =====\n");
+    printf("\n===== お会計 =====\n");   //ここから年齢確認に移す。
 
     int finalTotal = 0;
 
