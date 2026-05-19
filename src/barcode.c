@@ -120,9 +120,11 @@ int main() {
                 cart[item - 1] = 0;
 
                 printf("商品を削除しました\n");
+
+            } else {
+                printf("無効な番号です\n");
             }
         }
-    }
 
     // final cart
     printf("\n===== お会計 =====\n");   //ここから年齢確認に移す。
@@ -146,5 +148,7 @@ int main() {
 
     printf("ありがとうございました\n");
 
+    
+ }
     return 0;
 }
