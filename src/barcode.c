@@ -108,7 +108,7 @@ int main() {
         }
 
         // delete
-        else if (choice == 2) {3
+        else if (choice == 2) {
 
             int item;
 
@@ -120,9 +120,11 @@ int main() {
                 cart[item - 1] = 0;
 
                 printf("商品を削除しました\n");
+
+            } else {
+                printf("無効な番号です\n");
             }
         }
-    }
 
     // final cart
     printf("\n===== お会計 =====\n");
