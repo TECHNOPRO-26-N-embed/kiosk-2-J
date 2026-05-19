@@ -16,6 +16,5 @@ int main(void) {
         printf("レジ袋は使用しません。\n");
         printf("このまま買い物を続けます。\n");
     }
-   
     return 0;
 }
