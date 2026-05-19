@@ -127,7 +127,7 @@ int main() {
         }
 
     // final cart
-    printf("\n===== お会計 =====\n");
+    printf("\n===== お会計 =====\n");   //ここから年齢確認に移す。
 
     int finalTotal = 0;
 
@@ -148,5 +148,7 @@ int main() {
 
     printf("ありがとうございました\n");
 
+    
+ }
     return 0;
 }
