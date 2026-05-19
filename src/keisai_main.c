@@ -12,7 +12,7 @@ int main() {
         case 1:
             printf("現金を投入してください。\n");
             while(1){
-                int money;
+                int money;      //釣銭機の関係で現金とそれ以外を変数分けたい。
                 scanf("%d",&money);
                 if(money >= pay_sun){
                     printf("お釣りは%d円です。\n", money - pay_sun);

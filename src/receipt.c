@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "functions.h"
 
 char item[][10] = {"apple", "banana", "orange"};
 int number[] = {1, 2, 3};
@@ -6,7 +7,6 @@ int kosuu[] = {2, 3, 4};
 int price[] = {100, 200, 300};
 int itemcount = 3;
 
-int money;
 int discount = 50;
 
 
@@ -29,9 +29,10 @@ int receipt() {
     printf("合計: ￥%d\n", total);
 
     printf("=================================\n");
-}
-
-int main() {
-    receipt();
     return 0;
 }
+
+/*int main() {
+    receipt();
+    return 0;
+}*/
