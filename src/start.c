@@ -2,11 +2,7 @@
 
 int main() {
 
-    printf("画面をタッチ");
-    
- 
-  i = 0;
-  while (str[1]) {
-   
-  }
+    printf("画面をタッチ"); 
+
+    return 0;
 }
