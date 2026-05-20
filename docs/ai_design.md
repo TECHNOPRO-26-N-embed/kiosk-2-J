@@ -22,6 +22,9 @@ project/
 │   └── ai_design.md
 └── Makefile
 ```
+# 2.1 画面遷移
+
+画面遷移（簡潔版） Start（スタート画面） → Bag（レジ袋選択） → Product（商品スキャン/選択） → ManualInput（バーコードなしは手打ち/Pass入力） → CancelOption（キャンセル選択） → AgeCheck（年齢確認） → Payment（決済選択画面） → Receipt（レシート発行） → ChangeCheck（釣銭チェック） → Start（スタート画面）
 
 ---
 
@@ -38,14 +41,6 @@ product_id,name,price,tax_rate,age_limit
 
 ```csv
 datetime,product_name,quantity,total,payment_method
-```
-
-## coins.csv
-
-```csv
-denomination,count
-1000,10
-100,20
 ```
 
 ---
@@ -149,11 +144,3 @@ void save_transaction();
 - ログ保存確認
 
 ---
-
-# 10. 拡張案
-
-- バーコード対応
-- SQLite化
-- GUI化
-- レシート印刷
-- 在庫管理
