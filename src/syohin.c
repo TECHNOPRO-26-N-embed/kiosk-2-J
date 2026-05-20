@@ -618,3 +618,7 @@ int syohin() {
     printf("ありがとうございました\n");
     return 0;
 }
+int main () {
+    syohin();   
+    return 0;
+}
