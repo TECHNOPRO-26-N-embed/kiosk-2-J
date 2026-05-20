@@ -1,0 +1,97 @@
+// 会計開始（checkout）処理
+
+#include <stdio.h>
+#include <math.h> // floor関数を使う
+
+// --（ここはみんなで共有するCartItemなどを使ってください）--
+// 例（メンバーで定義されていればこの部分はいりません）
+//
+// typedef struct {
+//     char name[32];
+//     int price;
+//     int quantity;
+//     int tax_rate; // 8または10とか（税率の％）
+// } CartItem;
+//
+// extern CartItem cart[100];
+// extern int cart_size;
+
+void checkout() {
+    int i;
+    int subtotal = 0;      // 小計（税抜き合計金額）
+    int total_tax = 0;     // 税額の合計
+    int total = 0;         // 支払う合計金額（小計+税金）
+    int tax_rate_list[2] = {8, 10}; // 例:税率8%と10%
+    int tax_by_rate[2] = {0, 0};    // 税率ごとの税額をいれる場所
+
+    // --- 小計の計算 ---
+    for (i = 0; i < cart_size; i++) {
+        subtotal += cart[i].price * cart[i].quantity; // 商品の値段x数を全部足す
+    }
+
+    // --- 税率ごとに集計、税金計算 ---
+    // それぞれの税率について税額を出す（税額 = floor(課税対象額 * 税率 / 100 + 0.5) で四捨五入）
+    for (int tr = 0; tr < 2; tr++) {
+        int tax_rate = tax_rate_list[tr]; // 8または10
+        int taxable = 0; // この税率で課税する合計
+        for (i = 0; i < cart_size; i++) {
+            if (cart[i].tax_rate == tax_rate) {
+                taxable += cart[i].price * cart[i].quantity; // 課税額を集める
+            }
+        }
+        // 四捨五入で税額を計算（※この式は8.0や10.0に変えてもOK）
+        int tax = (int)floor((taxable * tax_rate / 100.0) + 0.5);
+        tax_by_rate[tr] = tax;
+        total_tax += tax; // 全体にも足す
+    }
+
+    // --- 合計金額の計算 ---
+    total = subtotal + total_tax;
+
+    // --- 金額表示 ---
+    printf("＜会計開始＞\n");
+    printf("-------------------\n");
+    printf("小計（税抜）: %d 円\n", subtotal);
+    for (int tr = 0; tr < 2; tr++) {
+        printf("税率%d%% 分の税額: %d 円\n", tax_rate_list[tr], tax_by_rate[tr]);
+    }
+    printf("税額合計: %d 円\n", total_tax);
+    printf("支払い合計金額: %d 円\n", total);
+    printf("-------------------\n");
+
+    // --- 支払方法の選択 ---
+    int pay_method = 0;
+    while (1) {
+        printf("支払方法を選択してください\n");
+        printf("現金:1  カード:2  電子:3  最初に戻る:9\n");
+        printf("選択 > ");
+        scanf("%d", &pay_method);
+
+        if (pay_method == 9) {
+            // 9が選ばれたら最初に戻る
+            printf("最初に戻ります。\n");
+            return;
+        }
+        else if (pay_method == 1) {
+            printf("現金支払いが選ばれました。\n");
+            // ここから現金処理に進む（もっと先の担当ならここでbreak;）
+            break;
+        }
+        else if (pay_method == 2) {
+            printf("カード支払い（疑似）が選ばれました。\n");
+            // ここからカード処理へ
+            break;
+        }
+        else if (pay_method == 3) {
+            printf("電子支払い（疑似）が選ばれました。\n");
+            // ここから電子処理へ
+            break;
+        }
+        else {
+            printf("もう一度正しい数字を選んでください。\n");
+        }
+    }
+
+    // この先は会計後の処理になるので
+    // ここで一旦終了。この後は他のメンバーの担当
+}
