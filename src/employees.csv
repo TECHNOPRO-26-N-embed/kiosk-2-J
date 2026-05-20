@@ -1,0 +1,4 @@
+login_id,password,barcode,name
+emp01,pass01,900001,Tanaka
+emp02,pass02,900002,Sato
+emp03,pass03,900003,Suzuki
