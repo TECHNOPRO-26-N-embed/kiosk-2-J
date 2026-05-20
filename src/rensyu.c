@@ -3,24 +3,42 @@
 #include <string.h>
 #include <ctype.h>
 
+/* ===== System limits =====
+   MAX_PRODUCTS   : max number of products loaded from CSV
+   MAX_CART_ITEMS : max number of unique products in cart
+*/
 #define MAX_PRODUCTS 1000
 #define MAX_NAME_LEN 64
 #define MAX_CART_ITEMS 300
 #define LINE_BUF 512
 
+/* Product master data (loaded from CSV)
+   id            : 4-digit product id (e.g. "1001")
+   name          : product name
+   price         : price in yen
+   barcode       : barcode text
+   age_restricted: 0 = no age check, 1 = age check required
+*/
 typedef struct {
-    char id[5];               // 4-digit product ID
+    char id[5];
     char name[MAX_NAME_LEN];
     int price;
     char barcode[32];
-    int age_restricted;       // 0: no check, 1: age check required
+    int age_restricted;
 } Product;
 
+/* One line in cart:
+   which product + how many units
+*/
 typedef struct {
     Product product;
     int quantity;
 } CartItem;
 
+/* Whole application state:
+   - product master list
+   - current cart
+*/
 typedef struct {
     Product products[MAX_PRODUCTS];
     int product_count;
@@ -29,8 +47,11 @@ typedef struct {
     int cart_count;
 } KioskState;
 
-/* ---------- Utility ---------- */
+/* =========================
+   Utility helper functions
+   ========================= */
 
+/* Remove trailing '\n' / '\r' from fgets input */
 static void trim_newline(char *s) {
     size_t n = strlen(s);
     while (n > 0 && (s[n - 1] == '\n' || s[n - 1] == '\r')) {
@@ -39,6 +60,7 @@ static void trim_newline(char *s) {
     }
 }
 
+/* Safe line input wrapper (uses fgets) */
 static void read_line(char *buf, size_t sz) {
     if (!fgets(buf, (int)sz, stdin)) {
         buf[0] = '\0';
@@ -47,6 +69,7 @@ static void read_line(char *buf, size_t sz) {
     trim_newline(buf);
 }
 
+/* Check if string is exactly 4 digits */
 static int is_4digit_id(const char *s) {
     if (!s || strlen(s) != 4) return 0;
     for (int i = 0; i < 4; i++) {
@@ -55,6 +78,7 @@ static int is_4digit_id(const char *s) {
     return 1;
 }
 
+/* Parse integer >= 0 from string */
 static int parse_non_negative_int(const char *s, int *out) {
     if (!s || *s == '\0') return 0;
     for (int i = 0; s[i]; i++) {
@@ -66,17 +90,19 @@ static int parse_non_negative_int(const char *s, int *out) {
     return 1;
 }
 
+/* Parse integer > 0 from string */
 static int parse_positive_int(const char *s, int *out) {
     if (!parse_non_negative_int(s, out)) return 0;
     return *out > 0;
 }
 
-/* ---------- CSV Load ---------- */
-/*
-CSV format:
-id,name,price,barcode,age
-1001,コーラ,120,111111,0
-1002,ビール,250,999999,1
+/* =========================
+   Product CSV loading
+   =========================
+   CSV format:
+   id,name,price,barcode,age
+   1001,コーラ,120,111111,0
+   1002,ビール,250,999999,1
 */
 int load_products_from_csv(KioskState *st, const char *filename) {
     FILE *fp = fopen(filename, "r");
@@ -90,16 +116,24 @@ int load_products_from_csv(KioskState *st, const char *filename) {
 
     while (fgets(line, sizeof(line), fp)) {
         trim_newline(line);
-        if (line[0] == '\0') continue;
-        if (strncmp(line, "id,", 3) == 0) continue; // header
 
+        /* skip empty line */
+        if (line[0] == '\0') continue;
+
+        /* skip header row */
+        if (strncmp(line, "id,", 3) == 0) continue;
+
+        /* split CSV columns */
         char *id = strtok(line, ",");
         char *name = strtok(NULL, ",");
         char *price_s = strtok(NULL, ",");
         char *barcode = strtok(NULL, ",");
         char *age_s = strtok(NULL, ",");
 
+        /* require all 5 columns */
         if (!id || !name || !price_s || !barcode || !age_s) continue;
+
+        /* validate id and numeric columns */
         if (!is_4digit_id(id)) continue;
 
         int price = 0, age = 0;
@@ -109,6 +143,7 @@ int load_products_from_csv(KioskState *st, const char *filename) {
 
         if (st->product_count >= MAX_PRODUCTS) break;
 
+        /* store product in memory */
         Product *p = &st->products[st->product_count++];
         memset(p, 0, sizeof(*p));
         strncpy(p->id, id, sizeof(p->id) - 1);
@@ -116,6 +151,7 @@ int load_products_from_csv(KioskState *st, const char *filename) {
         strncpy(p->barcode, barcode, sizeof(p->barcode) - 1);
         p->price = price;
         p->age_restricted = age;
+
         loaded++;
     }
 
@@ -123,8 +159,11 @@ int load_products_from_csv(KioskState *st, const char *filename) {
     return loaded;
 }
 
-/* ---------- Search ---------- */
+/* =========================
+   Product search functions
+   ========================= */
 
+/* Search product by 4-digit ID */
 Product *find_product_by_id(KioskState *st, const char *id) {
     for (int i = 0; i < st->product_count; i++) {
         if (strcmp(st->products[i].id, id) == 0) return &st->products[i];
@@ -132,6 +171,7 @@ Product *find_product_by_id(KioskState *st, const char *id) {
     return NULL;
 }
 
+/* Search product by barcode */
 Product *find_product_by_barcode(KioskState *st, const char *barcode) {
     for (int i = 0; i < st->product_count; i++) {
         if (strcmp(st->products[i].barcode, barcode) == 0) return &st->products[i];
@@ -139,11 +179,16 @@ Product *find_product_by_barcode(KioskState *st, const char *barcode) {
     return NULL;
 }
 
-/* ---------- Age Confirmation ---------- */
+/* =========================
+   Age confirmation logic
+   ========================= */
 
+/* If product is age-restricted (age=1), ask staff confirmation.
+   return 1: allowed
+   return 0: not allowed
+*/
 int staff_age_confirmation(const Product *p) {
-    // age=0 -> no confirmation needed
-    if (p->age_restricted == 0) return 1;
+    if (p->age_restricted == 0) return 1; /* no check needed */
 
     char buf[16];
     while (1) {
@@ -152,15 +197,18 @@ int staff_age_confirmation(const Product *p) {
         printf("1 = はい / 0 = いいえ : ");
         read_line(buf, sizeof(buf));
 
-        if (strcmp(buf, "1") == 0) return 1; // allow
-        if (strcmp(buf, "0") == 0) return 0; // deny
+        if (strcmp(buf, "1") == 0) return 1; /* allow add */
+        if (strcmp(buf, "0") == 0) return 0; /* deny add */
 
         printf("入力は 1 か 0 で入力してください\n");
     }
 }
 
-/* ---------- Cart ---------- */
+/* =========================
+   Cart functions
+   ========================= */
 
+/* Find existing cart item index by product id */
 int find_cart_index(KioskState *st, const char *id) {
     for (int i = 0; i < st->cart_count; i++) {
         if (strcmp(st->cart[i].product.id, id) == 0) return i;
@@ -168,6 +216,10 @@ int find_cart_index(KioskState *st, const char *id) {
     return -1;
 }
 
+/* Add product to cart
+   - if already exists: increase quantity
+   - if new: append cart item
+*/
 void add_to_cart(KioskState *st, Product *p, int qty) {
     int idx = find_cart_index(st, p->id);
     if (idx >= 0) {
@@ -185,18 +237,23 @@ void add_to_cart(KioskState *st, Product *p, int qty) {
     st->cart_count++;
 }
 
+/* Remove one cart line completely */
 void remove_cart_item(KioskState *st, int index) {
     if (index < 0 || index >= st->cart_count) return;
-    for (int i = index; i < st->cart_count - 1; i++) st->cart[i] = st->cart[i + 1];
+    for (int i = index; i < st->cart_count - 1; i++) {
+        st->cart[i] = st->cart[i + 1];
+    }
     st->cart_count--;
 }
 
+/* Change quantity (qty <= 0 means delete item) */
 void update_cart_quantity(KioskState *st, int index, int qty) {
     if (index < 0 || index >= st->cart_count) return;
     if (qty <= 0) remove_cart_item(st, index);
     else st->cart[index].quantity = qty;
 }
 
+/* Calculate total amount of cart */
 int cart_total(KioskState *st) {
     int total = 0;
     for (int i = 0; i < st->cart_count; i++) {
@@ -205,6 +262,7 @@ int cart_total(KioskState *st) {
     return total;
 }
 
+/* Print cart contents */
 void show_cart(KioskState *st) {
     printf("\n===== カート =====\n");
     if (st->cart_count == 0) {
@@ -224,8 +282,15 @@ void show_cart(KioskState *st) {
     printf("合計: %d円\n", cart_total(st));
 }
 
-/* ---------- UI ---------- */
+/* =========================
+   UI menus / flow
+   ========================= */
 
+/* Cart edit menu:
+   1) quantity change
+   2) delete item
+   0) back
+*/
 void cart_edit_menu(KioskState *st) {
     char buf[64];
     while (1) {
@@ -284,6 +349,11 @@ void cart_edit_menu(KioskState *st) {
     }
 }
 
+/* Ask user to input barcode or 4-digit id
+   Keep your requested prompt style:
+   - バーコードを入力してください
+   - 0 を入力すると終了します
+*/
 Product *input_product(KioskState *st) {
     char key[64];
 
@@ -310,6 +380,7 @@ Product *input_product(KioskState *st) {
     }
 }
 
+/* Ask quantity input (>=1) */
 int input_quantity() {
     char q[32];
     int qty;
@@ -321,14 +392,20 @@ int input_quantity() {
     }
 }
 
+/* Main product add loop
+   1) input product
+   2) age confirmation if needed
+   3) input quantity + add to cart
+   4) continue / cart edit / checkout
+*/
 void product_add_loop(KioskState *st) {
     char cmd[32];
 
     while (1) {
         Product *p = input_product(st);
-        if (!p) break; // user entered 0
+        if (!p) break; /* user selected finish */
 
-        // age confirmation check
+        /* age check gate */
         if (!staff_age_confirmation(p)) {
             printf("年齢確認NGのため、この商品は追加できません\n");
             continue;
@@ -357,6 +434,11 @@ void product_add_loop(KioskState *st) {
     }
 }
 
+/* Entry point:
+   - load product master from CSV
+   - start add loop
+   - show final checkout
+*/
 int main(void) {
     KioskState st;
     memset(&st, 0, sizeof(st));
@@ -377,5 +459,6 @@ int main(void) {
     show_cart(&st);
     printf("合計金額: %d円\n", cart_total(&st));
     printf("ありがとうございました\n");
+
     return 0;
 }
