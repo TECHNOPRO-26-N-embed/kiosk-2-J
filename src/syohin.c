@@ -2,48 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-
-// ===== Limits / 上限設定 =====
-#define MAX_PRODUCTS 1500      // Max products from CSV / CSVから読み込む最大商品数
-#define MAX_NAME_LEN 64        // Max product name length / 商品名の最大長
-#define MAX_CART_ITEMS 300     // Max unique cart lines / カート内の最大商品行数
-#define MAX_EMPLOYEES 200      // Max employees from CSV / CSVから読み込む最大従業員数
-#define LINE_BUF 512           // Input line buffer / 1行読み込みバッファ
-
-// Product data / 商品データ
-typedef struct {
-    char id[5];                // 4-digit product ID / 4桁商品ID
-    char name[MAX_NAME_LEN];   // Product name / 商品名
-    int price;                 // Price in yen / 価格（円）
-    char barcode[32];          // Product barcode / 商品バーコード
-    int age_restricted;        // 0=no check, 1=age check needed / 0=不要,1=年齢確認必要
-} Product;
-
-// Cart line / カート1行
-typedef struct {
-    Product product;           // Product info / 商品情報
-    int quantity;              // Quantity / 数量
-} CartItem;
-
-// Employee data / 従業員データ
-typedef struct {
-    char login_id[32];         // Admin login ID / 管理ログインID
-    char password[32];         // Admin password / 管理パスワード
-    char barcode[32];          // Employee barcode for age check / 年齢確認用バーコード
-    char name[32];             // Employee name / 従業員名
-} Employee;
-
-// Application state / アプリ全体状態
-typedef struct {
-    Product products[MAX_PRODUCTS];  // Product master / 商品マスタ
-    int product_count;               // Number of products / 商品数
-
-    CartItem cart[MAX_CART_ITEMS];   // Cart data / カートデータ
-    int cart_count;                  // Number of cart lines / カート行数
-
-    Employee employees[MAX_EMPLOYEES]; // Employee master / 従業員マスタ
-    int employee_count;                // Number of employees / 従業員数
-} KioskState;
+#include "syohin.h"
 
 // Remove newline chars / 末尾改行削除
 static void trim_newline(char *s) {
@@ -118,7 +77,10 @@ int load_products_from_csv(KioskState *st, const char *filename) {
 
         int price = 0, age = 0;
         if (!parse_positive_int(price_s, &price)) continue;
-        if (!parse_non_negative_int(age_s, &age) || !(age == 0 || age == 1)) continue;
+
+        // CHANGED: age must be 0 or 20 / 変更: 年齢フラグは0または20
+        if (!parse_non_negative_int(age_s, &age) || !(age == 0 || age == 20)) continue;
+
         if (st->product_count >= MAX_PRODUCTS) break;
 
         Product *p = &st->products[st->product_count++];
@@ -303,10 +265,13 @@ void admin_add_product(KioskState *st, const char *products_csv) {
 
     while (1) {
         int age;
-        printf("年齢確認フラグ (0=不要,1=必要): ");
+        // CHANGED: prompt 0/20 / 変更: 表示を0/20へ
+        printf("年齢確認フラグ (0=不要,20=必要): ");
         read_line(buf, sizeof(buf));
-        if (!parse_non_negative_int(buf, &age) || !(age == 0 || age == 1)) {
-            printf("0 または 1 を入力してください\n");
+
+        // CHANGED: validate 0 or 20 / 変更: 0または20のみ許可
+        if (!parse_non_negative_int(buf, &age) || !(age == 0 || age == 20)) {
+            printf("0 または 20 を入力してください\n");
             continue;
         }
         np.age_restricted = age;
@@ -407,7 +372,9 @@ void show_cart(KioskState *st) {
 
 // Age confirmation (employee barcode only) / 年齢確認（従業員バーコードのみ）
 int staff_age_confirmation(KioskState *st, const Product *p) {
-    if (p->age_restricted == 0) return 1; // No check needed / 確認不要
+    // CHANGED: only 20 requires confirmation / 変更: 20のときだけ確認する
+    if (p->age_restricted == 0) return 1;
+    if (p->age_restricted != 20) return 1; // unknown value -> allow / 想定外値は許可（必要なら拒否に変更）
 
     char emp_barcode[64];
     char decision[16];
@@ -618,7 +585,8 @@ int syohin() {
     printf("ありがとうございました\n");
     return 0;
 }
-int main () {
-    syohin();   
+
+int main() {
+    syohin();
     return 0;
 }
