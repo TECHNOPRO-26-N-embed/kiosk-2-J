@@ -4,7 +4,7 @@
 #include <ctype.h>
 
 // ===== Limits / 上限設定 =====
-#define MAX_PRODUCTS 1000      // Max products from CSV / CSVから読み込む最大商品数
+#define MAX_PRODUCTS 1500      // Max products from CSV / CSVから読み込む最大商品数
 #define MAX_NAME_LEN 64        // Max product name length / 商品名の最大長
 #define MAX_CART_ITEMS 300     // Max unique cart lines / カート内の最大商品行数
 #define MAX_EMPLOYEES 200      // Max employees from CSV / CSVから読み込む最大従業員数
@@ -588,7 +588,7 @@ BACK_MAIN:
 }
 
 // Program entry / プログラム開始
-int main(void) {
+int syohin() {
     KioskState st;
     memset(&st, 0, sizeof(st));
 
