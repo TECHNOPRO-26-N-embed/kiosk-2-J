@@ -64,3 +64,7 @@ int start(void) {
     }
     return 0;
 }
+
+int main(void) {
+    return start();
+}
