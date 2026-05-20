@@ -61,3 +61,16 @@ void checkout(KioskState *st) {
 
     // --- 6. ここから支払い処理担当の関数を呼び出してね！ ---
 }
+int main() {
+    KioskState st;
+    memset(&st, 0, sizeof(st));
+
+    // ここで商品や従業員のCSVを読み込んでね！
+
+    // カートに商品を追加する処理もここで呼び出してね！
+
+    // 最後にお会計処理
+    checkout(&st);
+
+    return 0;
+}
