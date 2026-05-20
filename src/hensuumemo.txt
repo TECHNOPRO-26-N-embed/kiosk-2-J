@@ -12,3 +12,48 @@ int i;
     int total = 0;         // 支払う合計金額（小計+税金）
     int tax_rate_list[2] = {8, 10}; // 例:税率8%と10%
     int tax_by_rate[2] = {0, 0};    // 税率ごとの税額をいれる場所
+
+
+
+
+
+    バシネット
+
+
+    構造体メンバ（重要）
+Product
+id
+name
+price
+barcode
+age_restricted
+CartItem
+product
+quantity
+Employee
+login_id
+password
+barcode
+name
+KioskState
+products
+product_count
+cart
+cart_count
+employees
+employee_count
+グローバル定数（マクロ）
+MAX_PRODUCTS
+MAX_NAME_LEN
+MAX_CART_ITEMS
+MAX_EMPLOYEES
+LINE_BUF
+関数内でよく使うローカル変数
+入力系: buf, key, q, cmd, no_s, qty_s, emp_barcode, decision, id, pass
+数値系: qty, price, age, no, total, sub, loaded, loaded_products, loaded_employees
+走査系: i, idx
+ポインタ系: p, e, fp
+ファイル名: products_csv, employees_csv
+状態本体: st
+新規商品追加用: np
+行バッファ: line
